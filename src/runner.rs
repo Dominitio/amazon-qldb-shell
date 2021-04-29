@@ -109,15 +109,17 @@ When your transaction is complete, enter 'commit' or 'abort' as appropriate."#,
                     }
                 }
             }
-            Err(ReadlineError::Interrupted) => {
-                self.deps.ui.println("CTRL-C");
-                TickFlow::Again
-            }
-            Err(ReadlineError::Eof) => self.handle_break().await?,
-            Err(err) => {
-                self.deps.ui.warn(&format!("Error: {:?}", err));
-                TickFlow::Exit
-            }
+            Err(err) => match err.downcast::<ReadlineError>() {
+                Ok(ReadlineError::Interrupted) => {
+                    self.deps.ui.println("CTRL-C");
+                    TickFlow::Again
+                }
+                Ok(ReadlineError::Eof) => self.handle_break().await?,
+                err => {
+                    self.deps.ui.warn(&format!("Error: {:?}", err));
+                    TickFlow::Exit
+                }
+            },
         })
     }
 
@@ -152,12 +154,8 @@ When your transaction is complete, enter 'commit' or 'abort' as appropriate."#,
                     Err(_) => Err(QldbShellError::UnknownCommand)?,
                 };
 
-                use command::*;
-                if let Backslash::Set(SetCommand::InputMode(mode)) = backslash {
-                    match mode {
-                        InputMode::Emacs => println!("setting mode to emacs"),
-                        InputMode::Vi => println!("setting mode to vi"),
-                    }
+                if let command::Backslash::Set(set) = backslash {
+                    self.deps.ui.handle_env_set(&set)?;
                 }
             }
         }

@@ -92,9 +92,9 @@ impl Deps<QldbSessionClient> {
                     ExecuteStatementOpt::SingleStatement(statement) => statement,
                     _ => todo!(),
                 };
-                ConsoleUi::new_for_script(&reader[..])?
+                ConsoleUi::new_for_script(&reader[..], env.clone())?
             }
-            None => ConsoleUi::new(env.terminator_required().value),
+            None => ConsoleUi::new(env.clone()),
         };
 
         Ok(Deps {
