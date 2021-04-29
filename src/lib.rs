@@ -12,6 +12,7 @@ use crate::settings::{Config, Opt};
 use crate::ui::ConsoleUi;
 use crate::ui::Ui;
 
+mod command;
 mod repl_helper;
 mod results;
 mod runner;

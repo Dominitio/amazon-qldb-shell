@@ -5,8 +5,11 @@ use rusoto_qldb_session::{QldbSession, QldbSessionClient};
 use rustyline::error::ReadlineError;
 use tracing::instrument;
 
-use crate::settings::{Environment, ExecuteStatementOpt};
 use crate::transaction::ShellTransaction;
+use crate::{
+    command,
+    settings::{Environment, ExecuteStatementOpt},
+};
 use crate::{Deps, QldbShellError};
 
 pub(crate) enum ProgramFlow {
@@ -142,7 +145,21 @@ When your transaction is complete, enter 'commit' or 'abort' as appropriate."#,
             "env" => self.handle_env(),
             "show tables" => self.handle_show_tables().await?,
             "use" => return Ok(TickFlow::Restart), // TODO: implement
-            _ => Err(QldbShellError::UnknownCommand)?,
+            _ => {
+                let iter = line.split_ascii_whitespace();
+                let backslash = match command::backslash(iter) {
+                    Ok(b) => b,
+                    Err(_) => Err(QldbShellError::UnknownCommand)?,
+                };
+
+                use command::*;
+                if let Backslash::Set(SetCommand::InputMode(mode)) = backslash {
+                    match mode {
+                        InputMode::Emacs => println!("setting mode to emacs"),
+                        InputMode::Vi => println!("setting mode to vi"),
+                    }
+                }
+            }
         }
 
         Ok(TickFlow::Again)
